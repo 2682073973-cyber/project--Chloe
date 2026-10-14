@@ -1,0 +1,171 @@
+/* A Bubble's Life — one shared token set for all three studies (greyscale, light + dark). */
+:root {
+  --bg: #e4e4e1;
+  --surface: #f3f3f1;
+  --ink: #1c1c1c;
+  --muted: #6f6f6c;
+  --line: #d2d2ce;
+  --film: #3a3a3a;      /* 01 slime membrane */
+  --glass: #ffffff;     /* 02 film inside the wand loop */
+  --fill: #f8f8f8;      /* 03 bubble body */
+  --edge: #262626;      /* 03 bubble outline + cracks */
+  --bub-hi: rgba(255,255,255,.95);
+  --bub-mid: rgba(255,255,255,.35);
+  --bub-lo: rgba(232,232,229,.25);
+  --bub-shade: rgba(28,28,28,.07);
+  --bub-rim: rgba(28,28,28,.42);
+  --bub-hl: #ffffff;
+  --bub-hl2: rgba(28,28,28,.18);
+  --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Fragment Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b0b0b; --surface: #151515; --ink: #ececea; --muted: #8c8c8a; --line: #343434;
+    --film: #d6d6d4; --glass: #2c2c2c; --fill: #1d1d1d; --edge: #d8d8d8;
+    --bub-hi: rgba(255,255,255,.30); --bub-mid: rgba(255,255,255,.08); --bub-lo: rgba(255,255,255,.03);
+    --bub-shade: rgba(255,255,255,.07); --bub-rim: rgba(236,236,234,.5); --bub-hl: rgba(255,255,255,.75); --bub-hl2: rgba(255,255,255,.18);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b0b0b; --surface: #151515; --ink: #ececea; --muted: #8c8c8a; --line: #343434;
+  --film: #d6d6d4; --glass: #2c2c2c; --fill: #1d1d1d; --edge: #d8d8d8;
+  --bub-hi: rgba(255,255,255,.30); --bub-mid: rgba(255,255,255,.08); --bub-lo: rgba(255,255,255,.03);
+  --bub-shade: rgba(255,255,255,.07); --bub-rim: rgba(236,236,234,.5); --bub-hl: rgba(255,255,255,.75); --bub-hl2: rgba(255,255,255,.18);
+  color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--sans);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; }
+button:focus-visible, canvas:focus-visible { outline: 1.5px solid var(--ink); outline-offset: 4px; }
+
+/* Fixed phone frame, scaled by sequence.js to fit the viewport */
+.fit { position: fixed; left: 50%; top: 50%; width: 390px; height: 844px; transform-origin: center; transform: translate(-50%, -50%); }
+.frame {
+  position: relative; width: 390px; height: 844px; overflow: hidden;
+  background: var(--surface); border-radius: 40px; box-shadow: 0 0 0 1px var(--line);
+  user-select: none; -webkit-user-select: none; touch-action: none;
+}
+body.full .frame { border-radius: 0; box-shadow: none; }
+.sky, .world, .bubble-layer, .fragile { position: absolute; inset: 0; }
+
+/* Sky specks: only visible while the camera follows the bubble up */
+.sky { opacity: 0; pointer-events: none; }
+.sky i { position: absolute; border-radius: 50%; background: var(--muted); opacity: .35; }
+
+/* ---------- 01 · Slime Wand ---------- */
+#wandCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; transition: opacity .45s ease; outline: none; }
+#wandCanvas.drag { cursor: grabbing; }
+#wandCanvas.gone { opacity: 0; pointer-events: none; }
+
+/* ---------- 02 · Bubble Release ---------- */
+@keyframes pulse { 0% { transform: scale(1); opacity: .55 } 100% { transform: scale(1.9); opacity: 0 } }
+@keyframes bob { 0%,100% { transform: translateY(0); opacity: .35 } 50% { transform: translateY(-8px); opacity: 1 } }
+@keyframes breathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.025) } }
+.pulse { animation: pulse 2.2s cubic-bezier(.2,.6,.3,1) infinite; }
+.pulse2 { animation: pulse 2.2s cubic-bezier(.2,.6,.3,1) 1.1s infinite; }
+.bob { animation: bob 1.6s ease-in-out infinite; }
+.bob2 { animation: bob 1.6s ease-in-out .18s infinite; }
+.breathe { animation: breathe 2.8s ease-in-out infinite; }
+
+.pring { position: absolute; left: 163px; top: 528px; width: 64px; height: 64px; border-radius: 50%; border: 1px solid var(--muted); pointer-events: none; }
+#wand {
+  position: absolute; left: 151px; top: 516px; width: 88px; height: 220px;
+  padding: 0; border: 0; background: transparent; touch-action: none;
+  transform-origin: 44px 216px; color: var(--ink);
+}
+#film { fill: var(--glass); transition: fill-opacity 300ms ease; }
+#threshold { position: absolute; left: 165px; width: 60px; border-top: 1.5px dashed var(--line); transition: border-color 200ms ease; }
+#swipeCue { position: absolute; left: 179px; width: 32px; display: flex; flex-direction: column; align-items: center; color: var(--ink); }
+
+.bubble-layer { pointer-events: none; }
+#bubble { position: absolute; padding: 0; border: 0; border-radius: 50%; background: transparent; touch-action: none; }
+#bubbleSkin {
+  position: absolute; inset: 0; border-radius: 50%; display: block; box-sizing: border-box;
+  border: 1.5px solid var(--bub-rim);
+  background: radial-gradient(circle at 34% 30%, var(--bub-hi) 0%, var(--bub-mid) 34%, var(--bub-lo) 70%, var(--bub-shade) 100%);
+}
+#bubble svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#bubble .hl1 { stroke: var(--bub-hl); }
+#bubble .hl2 { stroke: var(--bub-hl2); }
+
+/* ---------- 03 · Fragile Bubble ---------- */
+.fragile { touch-action: none; }
+.floater { position: absolute; left: 25px; top: 230px; width: 340px; height: 340px; animation: float 5.5s ease-in-out -1.375s infinite; }
+.shaker, #s { width: 100%; height: 100%; display: block; overflow: visible; }
+@keyframes float { 0%,100% { transform: translateY(-6px) } 50% { transform: translateY(6px) } }
+
+.fragile .body { fill: var(--fill); fill-opacity: .72; stroke: var(--edge); stroke-width: 1.1; }
+.fragile .hl { fill: none; stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; opacity: .28; }
+.fragile .spec { fill: var(--ink); opacity: .32; }
+#whole { cursor: pointer; transform-box: fill-box; transform-origin: center; transition: transform .18s cubic-bezier(.3,.7,.4,1); outline: none; }
+#whole.pressed { transform: scale(.955, .94); }
+#whole:focus-visible .body { stroke-width: 2.2; }
+
+.fragile .ring { fill: none; stroke: var(--ink); stroke-width: .8; stroke-dasharray: 2 5; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.cue1 .ring { animation: ring 2.4s cubic-bezier(.2,.6,.3,1) infinite; }
+.cue1 .ring.b { animation-delay: 1.2s; }
+@keyframes ring { 0% { transform: scale(.94); opacity: .55 } 100% { transform: scale(1.22); opacity: 0 } }
+
+.crack { fill: none; stroke: var(--edge); stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.frag { cursor: pointer; transform-box: view-box; transform-origin: 0 0; outline: none; }
+.edge { fill: none; stroke: var(--edge); stroke-width: 1.2; stroke-linejoin: round; }
+.cue2 .edge { animation: edge 1.6s ease-in-out infinite; }
+@keyframes edge { 0%,100% { stroke-opacity: 1 } 50% { stroke-opacity: .35 } }
+.frag.pressed .body { fill-opacity: .35; }
+.frag:focus-visible .edge { stroke-width: 2.4; animation: none; }
+.ripple { fill: none; stroke: var(--ink); stroke-width: 1; }
+.dust { fill: var(--ink); }
+
+/* ---------- Progress rail (all six steps) ---------- */
+.top { position: absolute; top: 30px; left: 24px; right: 24px; pointer-events: none; }
+.rail { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; list-style: none; margin: 0; padding: 0; }
+.rail li { display: grid; gap: 8px; font: 9.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); transition: color .3s; }
+.rail .bar { height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.rail .bar i { display: block; height: 100%; background: var(--ink); transform: scaleX(0); transform-origin: left; transition: transform .25s ease; }
+.rail li.on, .rail li.done { color: var(--ink); }
+.rail li.wait .bar i { animation: fillpulse 1.8s ease-in-out infinite; }
+@keyframes fillpulse { 0%,100% { transform: scaleX(.08) } 50% { transform: scaleX(.3) } }
+
+/* ---------- Cue footer ---------- */
+.cue {
+  position: absolute; left: 24px; right: 24px; bottom: 34px;
+  display: grid; gap: 7px; justify-items: center; text-align: center; pointer-events: none;
+}
+.cue > * { transition: opacity .18s; }
+.cue.swap > * { opacity: 0; }
+.caption { font: 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); min-height: 11px; }
+.label { font-size: 21px; line-height: 1.2; font-weight: 400; letter-spacing: -.01em; min-height: 25px; }
+.sub { font-size: 13.5px; line-height: 1.4; color: var(--muted); min-height: 19px; }
+
+/* ---------- End card ---------- */
+.endcard {
+  position: absolute; left: 24px; right: 24px; top: 300px;
+  display: grid; justify-items: center; gap: 14px; text-align: center;
+  opacity: 0; transform: translateY(8px); transition: opacity .6s ease, transform .6s ease;
+}
+.endcard.show { opacity: 1; transform: none; }
+.endcard p { margin: 0; }
+.end-title { font-size: 30px; letter-spacing: -.02em; }
+.end-sub { font-size: 14px; line-height: 1.5; color: var(--muted); }
+#again {
+  margin-top: 14px; padding: 12px 20px; border-radius: 999px; cursor: pointer;
+  background: var(--ink); color: var(--surface); border: 1px solid var(--ink);
+  font-size: 14px; font-weight: 500; touch-action: manipulation;
+}
+#again:active { transform: scale(.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse, .pulse2, .bob, .bob2, .breathe, .floater, .cue1 .ring, .cue2 .edge, .rail li.wait .bar i { animation: none; }
+  .pring.pulse { opacity: .45; transform: scale(1.2); }
+  .cue1 .ring.a { opacity: .45; transform: scale(1.08); }
+  .endcard { transition: none; }
+}

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>A Bubble's Life</title>
+<meta name="description" content="A sequential interaction prototype: load the wand, blow a bubble, lift it, crack it, let it go.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Instrument+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!--
+  One 390×844 phone frame, scaled to fit the viewport. Layers, back to front:
+  sky (parallax specks for the camera move) → world (wand: canvas for study 01, DOM for study 02)
+  → bubble layer (study 02 bubble) → fragile layer (study 03 SVG) → progress rail, cue footer, end card.
+-->
+<div class="fit" id="fit">
+<div class="frame" id="frame">
+
+  <div class="sky" id="sky" aria-hidden="true"></div>
+
+  <div class="world" id="world">
+    <!-- 01 · Slime Wand -->
+    <canvas id="wandCanvas" tabindex="0" role="button" aria-label="Bubble wand dipped in slime. Press and hold it, then drag left and right to shake it. Keyboard: hold Space and press the left and right arrows."></canvas>
+
+    <!-- 02 · Bubble Release: wand -->
+    <div id="pressCue" hidden aria-hidden="true">
+      <div class="pring pulse"></div>
+      <div class="pring pulse2"></div>
+    </div>
+    <button id="wand" type="button" hidden aria-label="Bubble wand: press and hold to blow a bubble, then let go">
+      <svg aria-hidden="true" width="88" height="220" viewBox="0 0 88 220" fill="none">
+        <circle id="film" cx="44" cy="44" r="27"></circle>
+        <circle cx="44" cy="44" r="27" stroke="currentColor" stroke-width="2"></circle>
+        <line x1="44" y1="71" x2="44" y2="214" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+      </svg>
+    </button>
+    <div id="threshold" hidden></div>
+    <div id="swipeCue" hidden aria-hidden="true">
+      <svg class="bob" width="22" height="12" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10l9-8 9 8"></path></svg>
+      <svg class="bob2" width="22" height="12" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10l9-8 9 8"></path></svg>
+    </div>
+  </div>
+
+  <!-- 02 · Bubble Release: bubble (outside the world so the camera can follow it) -->
+  <div class="bubble-layer" id="bubbleLayer">
+    <button id="bubble" type="button" hidden aria-label="Bubble: swipe up to lift it">
+      <span id="bubbleSkin"></span>
+      <svg aria-hidden="true" viewBox="0 0 100 100">
+        <path class="hl1" d="M24 40 A30 30 0 0 1 42 22" fill="none" stroke-width="4" stroke-linecap="round"></path>
+        <path class="hl2" d="M72 76 A30 30 0 0 1 62 82" fill="none" stroke-width="2" stroke-linecap="round"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- 03 · Fragile Bubble -->
+  <div class="fragile" id="fragile" hidden>
+    <div class="floater"><div class="shaker" id="shaker">
+      <svg id="s" viewBox="0 0 300 300" aria-label="A fragile bubble">
+        <defs id="defs">
+          <clipPath id="bodyclip"><circle cx="150" cy="150" r="78"></circle></clipPath>
+        </defs>
+        <g id="cue">
+          <circle class="ring a" cx="150" cy="150" r="92"></circle>
+          <circle class="ring b" cx="150" cy="150" r="92"></circle>
+        </g>
+        <g id="whole" tabindex="0" role="button" aria-label="Bubble. Tap to crack it."></g>
+        <g id="cracks" clip-path="url(#bodyclip)"></g>
+        <g id="frags"></g>
+        <g id="fx"></g>
+      </svg>
+    </div></div>
+  </div>
+
+  <header class="top">
+    <ol class="rail" id="rail" aria-label="Progress"></ol>
+  </header>
+
+  <footer class="cue" id="cueBox" aria-live="polite">
+    <div class="caption" id="caption"></div>
+    <div class="label" id="label"></div>
+    <div class="sub" id="sub"></div>
+  </footer>
+
+  <div class="endcard" id="endcard" hidden>
+    <p class="end-title">Nothing left.</p>
+    <p class="end-sub">Slime, breath, air, then dust.<br>One bubble's whole life.</p>
+    <button id="again" type="button">Blow another bubble</button>
+  </div>
+
+</div>
+</div>
+
+<script src="js/sequence.js"></script>
+<script src="js/scene-wand.js"></script>
+<script src="js/scene-blow.js"></script>
+<script src="js/scene-fragile.js"></script>
+<script>Seq.boot();</script>
+</body>
+</html>
